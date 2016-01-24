@@ -1,0 +1,132 @@
+import os
+import urllib.request
+
+import pandas as pd
+from openpyxl import load_workbook
+from pandas import ExcelWriter
+
+current_folder = os.path.dirname(os.path.abspath(__file__))
+
+
+class Stock():
+    caiwu_folder = os.path.join(current_folder, '财务数据')
+    need_items = ['营业总收入(万元)', '研发费用(万元)', '财务费用(万元)', '净利润(万元)_x',
+                  '归属于母公司所有者的净利润(万元)', '总资产(万元)', '总负债(万元)', '流动资产(万元)', '流动负债(万元)'
+        , '股东权益不含少数股东权益(万元)', '净资产收益率加权(%)', ' 支付给职工以及为职工支付的现金(万元)',
+                  '经营活动产生的现金流量净额(万元)', ' 投资活动产生的现金流量净额(万元)', '应收账款(万元)'
+        , '存货(万元)', '开发支出(万元)', '归属于母公司股东权益合计(万元)', '所有者权益(或股东权益)合计(万元)'
+        , '投资收益(万元)_x']
+    # ,'支付给职工以及为职工支付的现金(万元)'
+
+    items_new_name = ['营业收入', '研发费用', '财务费用', '净利润', '归属净利润', '总资产', '总负债', '流动资产',
+                      '流动负债', '股东权益', 'ROE', ' 职工薪酬', '经营现金流', ' 投资现金流'
+        , '应收账款', '存货', '开发支出', '归属股东权益', '权益合计'
+        , '投资收益']  # 名字和上面列表一一对应
+
+    current_quarter = '2015-09-30'
+    report_end_year = 2015
+
+    def __init__(self, code, name, hangye):
+        self.code = code
+        self.name = name
+        self.hangye = hangye + '行业.xlsx'
+        # self.dframe=dframe
+        self.cwzb_path = os.path.join(self.caiwu_folder, '财务指标' + self.code + '.csv')
+        self.zcfzb_path = os.path.join(self.caiwu_folder, '资产负债表' + self.code + '.csv')
+        self.lrb_path = os.path.join(self.caiwu_folder, '利润表' + self.code + '.csv')
+        self.xjllb_path = os.path.join(self.caiwu_folder, '现金流量表' + self.code + '.csv')
+        self.cwzb_url = 'http://quotes.money.163.com/service/zycwzb_%s.html?type=report' % self.code  # 财务总表
+        self.zcfzb_url = 'http://quotes.money.163.com/service/zcfzb_%s.html' % self.code  # 资产负债表
+        self.lrb_url = 'http://quotes.money.163.com/service/lrb_%s.html' % self.code  # 利润表
+        self.xjll_url = 'http://quotes.money.163.com/service/xjllb_%s.html' % self.code  # 现金流量表
+        self.url_reports = {self.cwzb_url: self.cwzb_path, self.zcfzb_url: self.zcfzb_path,
+                            self.lrb_url: self.lrb_path, self.xjll_url: self.xjllb_path}
+        # url和对应的文件路径
+
+    def save_xls(self, dframe):  # 把数据写到已行业命名的excel文件的名字sheet
+        xls_path = os.path.join(current_folder, '筛选后股票的财务报表', self.hangye)
+        if os.path.exists(xls_path):  # excel 文件已经存在
+            book = load_workbook(xls_path)
+            writer = pd.ExcelWriter(xls_path, engine='openpyxl')
+            writer.book = book
+            writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
+            dframe.to_excel(writer, self.name)
+            writer.save()
+        else:  # 文件还不存在
+            writer = ExcelWriter(xls_path)
+            dframe.to_excel(writer, self.name)
+            writer.save()
+
+    def download_if_need(self, url, path):
+        if not os.path.exists(path):
+            urllib.request.urlretrieve(url, path)
+
+    def doanload_stock_info(self):
+        for url in self.url_reports:
+            self.download_if_need(url, self.url_reports[url])
+
+    def _generate_report(self):
+        data_frames = []
+        for key in self.url_reports:
+            data_frames.append(pd.read_csv(self.url_reports[key], encoding="gbk", index_col=0).T)
+        merge_frame = None
+        # print(data_frames)
+        for frame in data_frames:
+            if merge_frame is None:
+                merge_frame = frame
+            else:
+                merge_frame = pd.merge(merge_frame, frame, left_index=True, right_index=True)
+        # print(merge_frame)
+        merge_frame = merge_frame[self.need_items]  # 只取需要的指标
+        merge_frame.columns = self.items_new_name  # 重命名列
+        # merge_frame['ROE'] =float(merge_frame['ROE'])*10000 #要不然后面会除没有了
+        for index, row in merge_frame.iterrows():
+            try:
+                merge_frame.loc[index, 'ROE'] = 10000 * float(row['ROE'])
+            except Exception:
+                pass
+
+        # x=merge_frame.columns
+        merge_frame = merge_frame.T
+        years = [self.current_quarter]
+        for y in range(self.report_end_year - 1, 2005, -1):
+            date = str(y) + '-12-31'
+            if date in merge_frame.columns:  # 如果存在该时间的数据
+                years.append(date)
+        merge_frame = merge_frame[years]  # 值取需要的时间
+        # print(merge_frame)
+        merge_frame = merge_frame.applymap(self.convert2yi)
+        self.save_xls(merge_frame)
+
+    def generate_report(self):
+        # try:
+        self.doanload_stock_info()
+        self._generate_report()
+        # except Exception as e:
+        #     print(e)
+        #     print('生成%s报表失败'%self.name)
+
+    @staticmethod
+    def convert2yi(value):
+        try:
+            return round(float(value) / 10000)
+        except Exception as e:
+            return value
+
+
+if __name__ == '__main__':
+    # jxty='600362'
+    # zya='000869'
+    # s=Stock('000869','张  裕Ａ','红黄药酒')
+    # #s=Stock(jxty,'江西铜业','铜')
+    # #s.doanload_stock_info()
+    # s.generate_report()
+
+    stocks_path = os.path.join(current_folder, '筛选后股票的财务报表', '筛选后的股票列表.xlsx')
+    stocks = pd.read_excel(stocks_path, index_col=0)
+    for index, row in stocks.iterrows():
+        s = Stock('%06d' % index, row['名字'], row['行业'])
+        print('正在生成' + row['名字'] + '的报表')
+        s.generate_report()
+
+    print('完成')

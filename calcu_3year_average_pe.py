@@ -1,10 +1,9 @@
-import urllib.request
 import os
-from pandas import DataFrame,Series
-import pandas as pd
-import numpy as np
-import tushare as ts
+import urllib.request
 from datetime import datetime
+
+import pandas as pd
+import tushare as ts
 
 current_folder=os.path.dirname(os.path.abspath(__file__))
 caiwu_folder=os.path.join(current_folder,'财务数据')
@@ -90,8 +89,8 @@ def update_all_stock_average_pe():
     data['流动资产']=data['流动资产'].round()
     data['总股本(万)']=data['总股本(万)'].round()
     data['流通股本']=data['流通股本'].round()
-    average_pe_file=os.path.join(current_folder,current_sec+'3年平均市盈率.csv')
-    data.to_csv(average_pe_file)
+    average_pe_file = os.path.join(current_folder, current_sec + '3年平均市盈率.xlsx')
+    data.to_excel(average_pe_file)
 
 
     
