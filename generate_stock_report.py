@@ -2,11 +2,14 @@ import os
 import urllib.request
 
 import pandas as pd
+from bs4 import BeautifulSoup
 from openpyxl import load_workbook
 from pandas import ExcelWriter
 
 current_folder = os.path.dirname(os.path.abspath(__file__))
 
+
+# 拟分配的利润或股利，可以得到分红的数额
 
 class Stock():
     caiwu_folder = os.path.join(current_folder, '财务数据')
@@ -41,6 +44,11 @@ class Stock():
         self.xjll_url = 'http://quotes.money.163.com/service/xjllb_%s.html' % self.code  # 现金流量表
         self.url_reports = {self.cwzb_url: self.cwzb_path, self.zcfzb_url: self.zcfzb_path,
                             self.lrb_url: self.lrb_path, self.xjll_url: self.xjllb_path}
+        if self.code.startswith('6'):
+            stock_code = 'sh' + self.code
+        else:
+            stock_code = 'sz' + self.code
+        self.fh_url = 'http://f10.eastmoney.com/f10_v2/BonusFinancing.aspx?code=%s' % stock_code
         # url和对应的文件路径
 
     def save_xls(self, dframe):  # 把数据写到已行业命名的excel文件的名字sheet
@@ -113,20 +121,54 @@ class Stock():
         except Exception as e:
             return value
 
+    @classmethod
+    def generate_reports(kls):
+        Stock.update_fhl()
+        stocks_path = os.path.join(current_folder, '筛选后股票的财务报表', '筛选后的股票列表.xlsx')
+        stocks = pd.read_excel(stocks_path, index_col=0)
+        for index, row in stocks.iterrows():
+            s = Stock('%06d' % index, row['名字'], row['行业'])
+            print('正在生成' + row['名字'] + '的报表')
+            s.generate_report()
+
+    def get_soup(self):
+        response = urllib.request.urlopen(self.fh_url)
+        html = response.read().decode('utf8')
+        return BeautifulSoup(html, "html.parser")
+
+    def get_3year_average_fh(self):  # 单位为万元
+        try:
+            print('获取%s的分红信息' % self.name)
+            soup = self.get_soup()
+            fd = soup.find(id='lnfhrz')
+            fd = fd.next_sibling.next_sibling.contents[1].contents
+            sum_fh = float(fd[1].contents[1].string.replace(',', '')) + float(
+                fd[2].contents[1].string.replace(',', '')) + float(fd[3].contents[1].string.replace(',', ''))
+            # print(sum_fh)
+            return round(sum_fh / 3)
+        except Exception as e:  # 没有分红
+            return 0
+
+    @classmethod
+    def update_fhl(kls):
+        stocks_path = os.path.join(current_folder, '筛选后股票的财务报表', '筛选后的股票列表.xlsx')
+        stocks = pd.read_excel(stocks_path, index_col=0)
+        stocks['3年平均分红'] = 0
+        for index, row in stocks.iterrows():
+            s = Stock('%06d' % index, row['名字'], row['行业'])
+            stocks.loc[index, '3年平均分红'] = s.get_3year_average_fh()
+        stocks['平均分红率'] = stocks['3年平均分红'] * 100 / (stocks['总股本(万)'] * stocks['价格'])
+        stocks['平均分红率'] = stocks['平均分红率'].round()
+        stocks.to_excel(stocks_path)
 
 if __name__ == '__main__':
-    # jxty='600362'
-    # zya='000869'
     # s=Stock('000869','张  裕Ａ','红黄药酒')
-    # #s=Stock(jxty,'江西铜业','铜')
-    # #s.doanload_stock_info()
-    # s.generate_report()
+    # s=Stock('600362','江西铜业','铜')
+    # # #s.doanload_stock_info()
+    # # s.generate_report()
+    # # s=Stock('000568','泸州老窖','白酒')
+    # print(s.get_3year_average_fh())
+    Stock.generate_reports()
 
-    stocks_path = os.path.join(current_folder, '筛选后股票的财务报表', '筛选后的股票列表.xlsx')
-    stocks = pd.read_excel(stocks_path, index_col=0)
-    for index, row in stocks.iterrows():
-        s = Stock('%06d' % index, row['名字'], row['行业'])
-        print('正在生成' + row['名字'] + '的报表')
-        s.generate_report()
 
     print('完成')

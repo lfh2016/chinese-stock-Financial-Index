@@ -10,6 +10,7 @@ caiwu_folder=os.path.join(current_folder,'财务数据')
 calcu_average_profit_end_year= 2014 #计算3年平均利润的截止年
 
 
+
 def create_folder_if_need(path):
     if not os.path.exists(path):  # 如果该文件夹不存在，创建文件夹
         os.makedirs(path)
@@ -62,7 +63,7 @@ def calcu_all_stocks_3year_average_profit(year): #生成3年平均利润列表
     data.to_csv(os.path.join(current_folder,'3年平均利润.csv'))
 
 
-def update_all_stock_average_pe():
+def filter_stock_by_average_pe(min, max):
     path=os.path.join(current_folder,'3年平均利润.csv')
     if not os.path.exists(path): #没有就生成3年平均利润列表
         calcu_all_stocks_3year_average_profit(calcu_average_profit_end_year)
@@ -82,6 +83,8 @@ def update_all_stock_average_pe():
     gplb=gplb[['名字','行业','地区','流通股本','总股本(万)','总资产(万)','流动资产','固定资产','每股净资','市净率','上市日期','平均利润']]
     data=pd.merge(gplb,current_price,left_index=True, right_index=True)
     data['平均市盈率']=data['总股本(万)']*data['价格']/data['平均利润']
+    data = data[data['平均市盈率'] < max]
+    data = data[data['平均市盈率'] > min]
     data['平均市盈率']=data['平均市盈率'].round()
     data['平均利润']=data['平均利润'].round()
     data['市净率']=data['市净率'].round(1)
@@ -89,11 +92,9 @@ def update_all_stock_average_pe():
     data['流动资产']=data['流动资产'].round()
     data['总股本(万)']=data['总股本(万)'].round()
     data['流通股本']=data['流通股本'].round()
-    average_pe_file = os.path.join(current_folder, current_sec + '3年平均市盈率.xlsx')
+    average_pe_file = os.path.join(current_folder, today + '3年平均市盈率在%s和%s之间的公司.xlsx' % (min, max))
     data.to_excel(average_pe_file)
 
 
-    
-
-update_all_stock_average_pe()
+filter_stock_by_average_pe(2, 20)
 print('完成')
