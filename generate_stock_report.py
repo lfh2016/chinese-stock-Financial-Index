@@ -22,7 +22,7 @@ class Stock():
     # ,'支付给职工以及为职工支付的现金(万元)'
 
     items_new_name = ['营业收入', '研发费用', '财务费用', '净利润', '归属净利润', '总资产', '总负债', '流动资产',
-                      '流动负债', '股东权益', 'ROE', ' 职工薪酬', '经营现金流', ' 投资现金流'
+                      '流动负债', '股东权益', 'ROE', ' 职工薪酬', '经营现金流', '投资现金流'
         , '应收账款', '存货', '开发支出', '归属股东权益', '权益合计'
         , '投资收益']  # 名字和上面列表一一对应
 
@@ -93,8 +93,10 @@ class Stock():
                 merge_frame.loc[index, 'ROE'] = 10000 * float(row['ROE'])
             except Exception:
                 pass
-
-        # x=merge_frame.columns
+        try:
+            merge_frame['自由现金流'] = pd.to_numeric(merge_frame['经营现金流']) + pd.to_numeric(merge_frame['投资现金流'])
+        except Exception as e:
+            print(self.name + '自由现金流计算失败')
         merge_frame = merge_frame.T
         years = [self.current_quarter]
         for y in range(self.report_end_year - 1, 2005, -1):
@@ -107,12 +109,9 @@ class Stock():
         self.save_xls(merge_frame)
 
     def generate_report(self):
-        # try:
         self.doanload_stock_info()
         self._generate_report()
-        # except Exception as e:
-        #     print(e)
-        #     print('生成%s报表失败'%self.name)
+
 
     @staticmethod
     def convert2yi(value):
@@ -120,16 +119,6 @@ class Stock():
             return round(float(value) / 10000)
         except Exception as e:
             return value
-
-    @classmethod
-    def generate_reports(kls):
-        Stock.update_fhl()
-        stocks_path = os.path.join(current_folder, '筛选后股票的财务报表', '筛选后的股票列表.xlsx')
-        stocks = pd.read_excel(stocks_path, index_col=0)
-        for index, row in stocks.iterrows():
-            s = Stock('%06d' % index, row['名字'], row['行业'])
-            print('正在生成' + row['名字'] + '的报表')
-            s.generate_report()
 
     def get_soup(self):
         response = urllib.request.urlopen(self.fh_url)
@@ -149,8 +138,8 @@ class Stock():
         except Exception as e:  # 没有分红
             return 0
 
-    @classmethod
-    def update_fhl(kls):
+
+def update_fhlv():
         stocks_path = os.path.join(current_folder, '筛选后股票的财务报表', '筛选后的股票列表.xlsx')
         stocks = pd.read_excel(stocks_path, index_col=0)
         stocks['3年平均分红'] = 0
@@ -161,6 +150,15 @@ class Stock():
         stocks['平均分红率'] = stocks['平均分红率'].round()
         stocks.to_excel(stocks_path)
 
+
+def generate_reports():
+    stocks_path = os.path.join(current_folder, '筛选后股票的财务报表', '筛选后的股票列表.xlsx')
+    stocks = pd.read_excel(stocks_path, index_col=0)
+    for index, row in stocks.iterrows():
+        s = Stock('%06d' % index, row['名字'], row['行业'])
+        print('正在生成' + row['名字'] + '的报表')
+        s.generate_report()
+
 if __name__ == '__main__':
     # s=Stock('000869','张  裕Ａ','红黄药酒')
     # s=Stock('600362','江西铜业','铜')
@@ -168,7 +166,6 @@ if __name__ == '__main__':
     # # s.generate_report()
     # # s=Stock('000568','泸州老窖','白酒')
     # print(s.get_3year_average_fh())
-    Stock.generate_reports()
-
-
+    generate_reports()
+    # update_fhlv()
     print('完成')

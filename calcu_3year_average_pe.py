@@ -7,9 +7,9 @@ import tushare as ts
 
 current_folder=os.path.dirname(os.path.abspath(__file__))
 caiwu_folder=os.path.join(current_folder,'财务数据')
-calcu_average_profit_end_year= 2014 #计算3年平均利润的截止年
+calcu_average_profit_end_year = 2015  # 计算3年平均利润的截止年
 
-
+DEBUG = True
 
 def create_folder_if_need(path):
     if not os.path.exists(path):  # 如果该文件夹不存在，创建文件夹
@@ -35,11 +35,17 @@ def calcu_3year_average_profit(code,year):
     download_stock_data(code)
     data=pd.read_csv(os.path.join(caiwu_folder,'财务指标'+code+'.csv'),encoding = "gbk",index_col=0)
     data=data.T
-    average_profit=0
-    for i in range(year-2,year+1):
-        average_profit+=float(data['净利润(万元)'][str(i)+'-12-31'])
-    average_profit /=3
-    print(average_profit)
+    average_profit= 0
+    for i in range(year - 2, year):
+        average_profit += float(data['净利润(万元)'][str(i) + '-12-31'])  # 之前2年的年净利润
+    try:
+        average_profit += float(data['净利润(万元)'][str(year) + '-09-30'])  # 今年三季度的利润
+    except Exception as e:
+        average_profit += float(data['净利润(万元)'][str(year - 3) + '-12-31'])  # 没有三季度的数据
+        if DEBUG:
+            print(code + '没有三季度的数据')
+    average_profit /= 3
+    #print(average_profit)
     return average_profit
 
 
@@ -53,8 +59,8 @@ def calcu_all_stocks_3year_average_profit(year): #生成3年平均利润列表
         data.index.names=['代码']
         data.to_csv(path)
         
-    data=pd.read_csv(path,encoding = "gbk",index_col=0)
-    print(data)
+    data=pd.read_csv(path, encoding = "gbk", index_col=0)
+    #print(data)
     data['平均利润']=0
     for index, row in data.iterrows():
         data.loc[index,'平均利润']=calcu_3year_average_profit('%06d'%index,year)
