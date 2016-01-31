@@ -78,16 +78,13 @@ class Stock():
         for key in self.url_reports:
             data_frames.append(pd.read_csv(self.url_reports[key], encoding="gbk", index_col=0).T)
         merge_frame = None
-        # print(data_frames)
         for frame in data_frames:
             if merge_frame is None:
                 merge_frame = frame
             else:
                 merge_frame = pd.merge(merge_frame, frame, left_index=True, right_index=True)
-        # print(merge_frame)
         merge_frame = merge_frame[self.need_items]  # 只取需要的指标
         merge_frame.columns = self.items_new_name  # 重命名列
-        # merge_frame['ROE'] =float(merge_frame['ROE'])*10000 #要不然后面会除没有了
         for index, row in merge_frame.iterrows():
             try:
                 merge_frame.loc[index, 'ROE'] = 10000 * float(row['ROE'])
@@ -96,15 +93,31 @@ class Stock():
         try:
             merge_frame['自由现金流'] = pd.to_numeric(merge_frame['经营现金流']) + pd.to_numeric(merge_frame['投资现金流'])
         except Exception as e:
+            merge_frame['自由现金流'] = 0
             print(self.name + '自由现金流计算失败')
+
+        try:
+            merge_frame['负债率'] = pd.to_numeric(merge_frame['总负债']) / pd.to_numeric(merge_frame['总资产'])
+            merge_frame['负债率'] = merge_frame['负债率'].round(2)
+        except Exception as e:
+            merge_frame['负债率'] = 0.66
+            print(self.name + '负债率计算失败')
+        try:
+            merge_frame['流动比率'] = pd.to_numeric(merge_frame['流动资产']) / pd.to_numeric(merge_frame['流动负债'])
+            merge_frame['流动比率'] = merge_frame['流动比率'].round(1)
+        except Exception as e:
+            merge_frame['流动比率'] = 0.66
+            print(self.name + '流动比率计算失败')
+        merge_frame = merge_frame[['营业收入', '财务费用', ' 职工薪酬', '净利润', '归属净利润', 'ROE',
+                                   '经营现金流', '投资现金流', '自由现金流', '负债率',
+                                   '流动比率', '应收账款', '存货', '研发费用', '开发支出', '投资收益']]
         merge_frame = merge_frame.T
         years = [self.current_quarter]
         for y in range(self.report_end_year - 1, 2005, -1):
             date = str(y) + '-12-31'
             if date in merge_frame.columns:  # 如果存在该时间的数据
                 years.append(date)
-        merge_frame = merge_frame[years]  # 值取需要的时间
-        # print(merge_frame)
+        merge_frame = merge_frame[years]  # 只取需要的时间
         merge_frame = merge_frame.applymap(self.convert2yi)
         self.save_xls(merge_frame)
 
@@ -116,7 +129,10 @@ class Stock():
     @staticmethod
     def convert2yi(value):
         try:
-            return round(float(value) / 10000)
+            if float(value) > 10 or float(value) < -10:
+                return round(float(value) / 10000)
+            else:
+                return value
         except Exception as e:
             return value
 
