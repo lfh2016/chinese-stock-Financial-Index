@@ -167,7 +167,7 @@ def update_fhlv():
         stocks.to_excel(stocks_path)
 
 
-def generate_reports():
+def generate_reports():  # 根据股票列表,生成报表
     stocks_path = os.path.join(current_folder, '筛选后股票的财务报表', '筛选后的股票列表.xlsx')
     stocks = pd.read_excel(stocks_path, index_col=0)
     for index, row in stocks.iterrows():
