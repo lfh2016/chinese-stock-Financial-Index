@@ -7,9 +7,10 @@ import tushare as ts
 
 current_folder=os.path.dirname(os.path.abspath(__file__))
 caiwu_folder=os.path.join(current_folder,'财务数据')
-calcu_average_profit_end_year = 2015  # 计算3年平均利润的截止年
+calcu_average_profit_end_year = 2016  # 计算平均利润的截止年,不包括该年
 
 DEBUG = True
+
 
 def create_folder_if_need(path):
     if not os.path.exists(path):  # 如果该文件夹不存在，创建文件夹
@@ -36,14 +37,14 @@ def calcu_3year_average_profit(code,year):
     data=pd.read_csv(os.path.join(caiwu_folder,'财务指标'+code+'.csv'),encoding = "gbk",index_col=0)
     data=data.T
     average_profit= 0
-    for i in range(year - 2, year):
+    for i in range(year - 3, year):
         average_profit += float(data['净利润(万元)'][str(i) + '-12-31'])  # 之前2年的年净利润
-    try:
-        average_profit += float(data['净利润(万元)'][str(year) + '-09-30'])  # 今年三季度的利润
-    except Exception as e:
-        average_profit += float(data['净利润(万元)'][str(year - 3) + '-12-31'])  # 没有三季度的数据
-        if DEBUG:
-            print(code + '没有三季度的数据')
+    # try:
+    #     average_profit += float(data['净利润(万元)'][str(year) + '-09-30'])  # 今年三季度的利润
+    # except Exception as e:
+    #     average_profit += float(data['净利润(万元)'][str(year - 3) + '-12-31'])  # 没有三季度的数据
+    #     if DEBUG:
+    #         print(code + '没有三季度的数据')
     average_profit /= 3
     #print(average_profit)
     return average_profit
@@ -78,12 +79,12 @@ def filter_stock_by_average_pe(min, max):
 
     now=datetime.now()
     today=str(now)[:11]
-    current_sec=str(now)[:18].replace('-','_').replace(':','_')
+    # current_sec=str(now)[:18].replace('-','_').replace(':','_')
     price_path=os.path.join(current_folder,today+'股票价格.csv')
     if not os.path.exists(price_path):
         ts.get_today_all().set_index('code').to_csv(price_path)
 
-    current_price=pd.read_csv(price_path,encoding = "gbk",index_col=0)
+    current_price = pd.read_csv(price_path, encoding="utf-8", index_col=0)
     current_price= current_price[['trade']]
     current_price.columns=['价格']
     gplb=gplb[['名字','行业','地区','流通股本','总股本(万)','总资产(万)','流动资产','固定资产','每股净资','市净率','上市日期','平均利润']]
@@ -102,5 +103,6 @@ def filter_stock_by_average_pe(min, max):
     data.to_excel(average_pe_file)
 
 
-filter_stock_by_average_pe(2, 20)
-print('完成')
+if __name__ == '__main__':
+    filter_stock_by_average_pe(2, 20)  # 这个函数是根据平均pe过滤股票
+    print('完成')
