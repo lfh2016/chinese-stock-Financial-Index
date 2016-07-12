@@ -38,7 +38,11 @@ def calcu_3year_average_profit(code,year):
     data=data.T
     average_profit= 0
     for i in range(year - 3, year):
-        average_profit += float(data['净利润(万元)'][str(i) + '-12-31'])  # 之前2年的年净利润
+        try:
+            average_profit += float(data['净利润(万元)'][str(i) + '-12-31'])  # 之前2年的年净利润
+        except KeyError:
+            print('%s %s年利润计算异常' % (code, i))
+            pass
     # try:
     #     average_profit += float(data['净利润(万元)'][str(year) + '-09-30'])  # 今年三季度的利润
     # except Exception as e:
@@ -46,12 +50,11 @@ def calcu_3year_average_profit(code,year):
     #     if DEBUG:
     #         print(code + '没有三季度的数据')
     average_profit /= 3
-    #print(average_profit)
     return average_profit
 
 
-def calcu_all_stocks_3year_average_profit(year): #生成3年平均利润列表
-    path=os.path.join(current_folder,'股票列表.csv')
+def all_stocks_3year_average_profit_and_other_finance_info(year, path_in):  # 生成3年平均利润列表
+    path = os.path.join(current_folder, '股票列表%s.csv' % today)
     if not os.path.exists(path):
         data=ts.get_stock_basics()
         lie=['名字','行业','地区','市盈率','流通股本','总股本(万)',
@@ -59,27 +62,22 @@ def calcu_all_stocks_3year_average_profit(year): #生成3年平均利润列表
         data.columns=lie
         data.index.names=['代码']
         data.to_csv(path)
-        
-    data=pd.read_csv(path, encoding = "gbk", index_col=0)
+
+    data = pd.read_csv(path, encoding="utf-8", index_col=0)
     #print(data)
     data['平均利润']=0
     for index, row in data.iterrows():
-        data.loc[index,'平均利润']=calcu_3year_average_profit('%06d'%index,year)
-
-        print('完成%s'%index)
-    data.to_csv(os.path.join(current_folder,'3年平均利润.csv'))
+        data.loc[index,'平均利润']=calcu_3year_average_profit('%06d' % index, year)
+        print('完成: %s' % index)
+    data.to_csv(path_in, encoding='utf-8')
 
 
 def filter_stock_by_average_pe(min, max):
-    path=os.path.join(current_folder,'3年平均利润.csv')
-    if not os.path.exists(path): #没有就生成3年平均利润列表
-        calcu_all_stocks_3year_average_profit(calcu_average_profit_end_year)
+    path = os.path.join(current_folder, '3年平均利润和其他财务指标%s.csv' % today)
+    if not os.path.exists(path):  # 没有就生成
+        all_stocks_3year_average_profit_and_other_finance_info(calcu_average_profit_end_year, path)
 
-    gplb=pd.read_csv(path,encoding = "gbk",index_col=0)
-
-    now=datetime.now()
-    today=str(now)[:11]
-    # current_sec=str(now)[:18].replace('-','_').replace(':','_')
+    gplb = pd.read_csv(path, encoding="utf-8", index_col=0)
     price_path=os.path.join(current_folder,today+'股票价格.csv')
     if not os.path.exists(price_path):
         ts.get_today_all().set_index('code').to_csv(price_path)
@@ -99,10 +97,12 @@ def filter_stock_by_average_pe(min, max):
     data['流动资产']=data['流动资产'].round()
     data['总股本(万)']=data['总股本(万)'].round()
     data['流通股本']=data['流通股本'].round()
-    average_pe_file = os.path.join(current_folder, today + '3年平均市盈率在%s和%s之间的公司.xlsx' % (min, max))
+    average_pe_file = os.path.join(current_folder, '3年平均市盈率在%s和%s之间的公司%s.xlsx' % (min, max, today))
     data.to_excel(average_pe_file)
 
 
 if __name__ == '__main__':
+    now = datetime.now()
+    today = now.strftime('%Y-%m-%d')
     filter_stock_by_average_pe(2, 20)  # 这个函数是根据平均pe过滤股票
     print('完成')
