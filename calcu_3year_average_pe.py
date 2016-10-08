@@ -90,13 +90,9 @@ def filter_stock_by_average_pe(min, max):
     data['平均市盈率']=data['总股本(万)']*data['价格']/data['平均利润']
     data = data[data['平均市盈率'] < max]
     data = data[data['平均市盈率'] > min]
-    data['平均市盈率']=data['平均市盈率'].round()
-    data['平均利润']=data['平均利润'].round()
-    data['市净率']=data['市净率'].round(1)
-    data['固定资产']=data['固定资产'].round()
-    data['流动资产']=data['流动资产'].round()
-    data['总股本(万)']=data['总股本(万)'].round()
-    data['流通股本']=data['流通股本'].round()
+
+    data = data.round(1)
+    data['平均市盈率'] = data['平均市盈率'].round()
     average_pe_file = os.path.join(current_folder, '3年平均市盈率在%s和%s之间的公司%s.xlsx' % (min, max, today))
     data.to_excel(average_pe_file)
 
