@@ -13,7 +13,7 @@ current_folder = os.path.dirname(os.path.abspath(__file__))
 
 class Stock():
     caiwu_folder = os.path.join(current_folder, '财务数据')
-    need_items = ['营业总收入(万元)', '研发费用(万元)', '财务费用(万元)', '净利润(万元)_x',
+    need_items = ['营业总收入(万元)', '研发费用(万元)', '财务费用(万元)', '净利润(万元)_y',
                   '归属于母公司所有者的净利润(万元)', '总资产(万元)', '总负债(万元)', '流动资产(万元)', '流动负债(万元)'
         , '股东权益不含少数股东权益(万元)', '净资产收益率加权(%)', ' 支付给职工以及为职工支付的现金(万元)',
                   '经营活动产生的现金流量净额(万元)', ' 投资活动产生的现金流量净额(万元)', '应收账款(万元)'
@@ -175,7 +175,7 @@ def generate_reports():  # 根据股票列表,生成报表
 
 if __name__ == '__main__':
     # s=Stock(sys.argv[1],sys.argv[2])  #股票代码，名字
-    s = Stock('000012', '南玻')
+    s = Stock('600660', '福耀玻璃')
     # # #s.doanload_stock_info()
     s.generate_report()
     # # s=Stock('000568','泸州老窖','白酒')
