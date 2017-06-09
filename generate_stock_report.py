@@ -13,26 +13,24 @@ current_folder = os.path.dirname(os.path.abspath(__file__))
 
 class Stock():
     caiwu_folder = os.path.join(current_folder, '财务数据')
-    need_items = ['营业总收入(万元)', '研发费用(万元)', '财务费用(万元)', '净利润(万元)_x',
+    need_items = ['营业总收入(万元)', '研发费用(万元)', '财务费用(万元)', '净利润(万元)_y',
                   '归属于母公司所有者的净利润(万元)', '总资产(万元)', '总负债(万元)', '流动资产(万元)', '流动负债(万元)'
         , '股东权益不含少数股东权益(万元)', '净资产收益率加权(%)', ' 支付给职工以及为职工支付的现金(万元)',
                   '经营活动产生的现金流量净额(万元)', ' 投资活动产生的现金流量净额(万元)', '应收账款(万元)'
         , '存货(万元)', '开发支出(万元)', '归属于母公司股东权益合计(万元)', '所有者权益(或股东权益)合计(万元)'
-        , '投资收益(万元)_x']
+        , '投资收益(万元)_x', '实收资本(或股本)(万元)', '每股净资产(元)']
     # ,'支付给职工以及为职工支付的现金(万元)'
 
     items_new_name = ['营业收入', '研发费用', '财务费用', '净利润', '归属净利润', '总资产', '总负债', '流动资产',
                       '流动负债', '股东权益', 'ROE', ' 职工薪酬', '经营现金流', '投资现金流'
         , '应收账款', '存货', '开发支出', '归属股东权益', '权益合计'
-        , '投资收益']  # 名字和上面列表一一对应
+        , '投资收益', '总股本', '每股净资产']  # 名字和上面列表一一对应
 
-    current_quarter = '2015-09-30'
-    report_end_year = 2015
+    report_end_year = 2016
 
-    def __init__(self, code, name, hangye):
+    def __init__(self, code, name):
         self.code = code
         self.name = name
-        self.hangye = hangye + '行业.xlsx'
         # self.dframe=dframe
         self.cwzb_path = os.path.join(self.caiwu_folder, '财务指标' + self.code + '.csv')
         self.zcfzb_path = os.path.join(self.caiwu_folder, '资产负债表' + self.code + '.csv')
@@ -52,7 +50,7 @@ class Stock():
         # url和对应的文件路径
 
     def save_xls(self, dframe):  # 把数据写到已行业命名的excel文件的名字sheet
-        xls_path = os.path.join(current_folder, '筛选后股票的财务报表', self.hangye)
+        xls_path = os.path.join(current_folder, self.name + '.xlsx')
         if os.path.exists(xls_path):  # excel 文件已经存在
             book = load_workbook(xls_path)
             writer = pd.ExcelWriter(xls_path, engine='openpyxl')
@@ -108,12 +106,12 @@ class Stock():
         except Exception as e:
             merge_frame['流动比率'] = 0.66
             print(self.name + '流动比率计算失败')
-        merge_frame = merge_frame[['营业收入', '财务费用', ' 职工薪酬', '净利润', '归属净利润', 'ROE',
-                                   '经营现金流', '投资现金流', '自由现金流', '负债率',
-                                   '流动比率', '应收账款', '存货', '研发费用', '开发支出', '投资收益']]
+        merge_frame = merge_frame[['营业收入', '流动比率', '负债率', '经营现金流', '投资现金流', '自由现金流',
+                                   '净利润', '投资收益', ' 职工薪酬', '财务费用',
+                                   '研发费用', '开发支出', 'ROE', '总股本', '每股净资产']]
         merge_frame = merge_frame.T
-        years = [self.current_quarter]
-        for y in range(self.report_end_year - 1, 2005, -1):
+        years = []
+        for y in range(self.report_end_year, 2005, -1):
             date = str(y) + '-12-31'
             if date in merge_frame.columns:  # 如果存在该时间的数据
                 years.append(date)
@@ -130,7 +128,7 @@ class Stock():
     def convert2yi(value):
         try:
             if float(value) > 10 or float(value) < -10:
-                return round(float(value) / 10000)
+                return round(float(value) / 10000, 1)
             else:
                 return value
         except Exception as e:
@@ -160,7 +158,7 @@ def update_fhlv():
         stocks = pd.read_excel(stocks_path, index_col=0)
         stocks['3年平均分红'] = 0
         for index, row in stocks.iterrows():
-            s = Stock('%06d' % index, row['名字'], row['行业'])
+            s = Stock('%06d' % index, row['名字'])
             stocks.loc[index, '3年平均分红'] = s.get_3year_average_fh()
         stocks['平均分红率'] = stocks['3年平均分红'] * 100 / (stocks['总股本(万)'] * stocks['价格'])
         stocks['平均分红率'] = stocks['平均分红率'].round()
@@ -171,17 +169,17 @@ def generate_reports():  # 根据股票列表,生成报表
     stocks_path = os.path.join(current_folder, '筛选后股票的财务报表', '筛选后的股票列表.xlsx')
     stocks = pd.read_excel(stocks_path, index_col=0)
     for index, row in stocks.iterrows():
-        s = Stock('%06d' % index, row['名字'], row['行业'])
+        s = Stock('%06d' % index, row['名字'])
         print('正在生成' + row['名字'] + '的报表')
         s.generate_report()
 
 if __name__ == '__main__':
-    # s=Stock('000869','张  裕Ａ','红黄药酒')
-    # s=Stock('600362','江西铜业','铜')
+    # s=Stock(sys.argv[1],sys.argv[2])  #股票代码，名字
+    s = Stock('600660', '福耀玻璃')
     # # #s.doanload_stock_info()
-    # # s.generate_report()
+    s.generate_report()
     # # s=Stock('000568','泸州老窖','白酒')
     # print(s.get_3year_average_fh())
-    generate_reports()
+    # generate_reports()
     # update_fhlv()
     print('完成')
