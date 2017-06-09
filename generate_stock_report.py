@@ -175,7 +175,7 @@ def generate_reports():  # 根据股票列表,生成报表
 
 if __name__ == '__main__':
     # s=Stock(sys.argv[1],sys.argv[2])  #股票代码，名字
-    s = Stock('600660', '福耀玻璃')
+    s = Stock('600004', '白云机场')
     # # #s.doanload_stock_info()
     s.generate_report()
     # # s=Stock('000568','泸州老窖','白酒')
@@ -183,3 +183,4 @@ if __name__ == '__main__':
     # generate_reports()
     # update_fhlv()
     print('完成')
+    # 测试哦
