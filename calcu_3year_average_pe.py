@@ -10,7 +10,7 @@ import tushare as ts
 current_folder = os.path.dirname(os.path.abspath(__file__))
 
 calcu_average_profit_end_year = 2016  # 计算平均利润的截止年,包括该年
-caiwu_folder = os.path.join(current_folder, '财务数据%s' % calcu_average_profit_end_year)
+caiwu_folder = os.path.join(current_folder, 'finance%s' % calcu_average_profit_end_year)
 DEBUG = True
 
 today = str(datetime.now())[:10]
@@ -23,8 +23,8 @@ def create_folder_if_need(path):
         os.makedirs(path)
 
 
-def download_if_need(code, url, name):
-    path = os.path.join(caiwu_folder, name + code + '.csv')
+def download_if_need(code, url):
+    path = os.path.join(caiwu_folder, code + '.csv')
     if not os.path.exists(path):
         urllib.request.urlretrieve(url, path)
         sleep(1.5)  # 间隔一段时间，防止服务器关闭连接
@@ -34,23 +34,18 @@ def download_stock_data(code):
     cwzb_url = 'http://quotes.money.163.com/service/zycwzb_%s.html?type=report' % code
     # 财务指标
     create_folder_if_need(caiwu_folder)
-    download_if_need(code, cwzb_url, '财务指标')
+    download_if_need(code, cwzb_url)
 
 
 def calcu_3year_average_profit(code, year):
     download_stock_data(code)
-    data = pd.read_csv(os.path.join(caiwu_folder, '财务指标' + code + '.csv'), encoding="gbk",
+    data = pd.read_csv(os.path.join(caiwu_folder, code + '.csv'), encoding="gbk",
                        index_col=0)
     data = data.T
     average_profit = 0
     for i in range(year - 2, year + 1):
-        average_profit += float(data['净利润(万元)'][str(i) + '-12-31'])  # 之前2年的年净利润
-    # try:
-    #     average_profit += float(data['净利润(万元)'][str(year) + '-09-30'])  # 今年三季度的利润
-    # except Exception as e:
-    #     average_profit += float(data['净利润(万元)'][str(year - 3) + '-12-31'])  # 没有三季度的数据
-    #     if DEBUG:
-    #         print(code + '没有三季度的数据')
+        # 确认过，这里的'净利润(万元)'就是归属净利润
+        average_profit += float(data['净利润(万元)'][str(i) + '-12-31'])
     average_profit /= 3
     # print(average_profit)
     return average_profit
@@ -92,7 +87,7 @@ def filter_stock_by_average_pe(min, max):
     # current_sec=str(now)[:18].replace('-','_').replace(':','_')
     price_path = os.path.join(current_folder, today + '股票价格.csv')
     if not os.path.exists(price_path):
-        ts.get_today_all().set_index('code').to_csv(price_path)
+        ts.get_today_all().set_index('code').to_csv(price_path, encoding="utf-8")
 
     current_price = pd.read_csv(price_path, encoding="utf-8", index_col=0)
     current_price = current_price[['trade']]
