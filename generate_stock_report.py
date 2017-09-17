@@ -6,13 +6,15 @@ from bs4 import BeautifulSoup
 from openpyxl import load_workbook
 from pandas import ExcelWriter
 
+from calcu_3year_average_pe import create_folder_if_need
+
 current_folder = os.path.dirname(os.path.abspath(__file__))
 
 
 # 拟分配的利润或股利，可以得到分红的数额
 
 class Stock():
-    caiwu_folder = os.path.join(current_folder, '财务数据')
+    caiwu_folder = os.path.join(current_folder, 'finance2016')
     need_items = ['营业总收入(万元)', '研发费用(万元)', '财务费用(万元)', '净利润(万元)_y',
                   '归属于母公司所有者的净利润(万元)', '总资产(万元)', '总负债(万元)', '流动资产(万元)', '流动负债(万元)'
         , '股东权益不含少数股东权益(万元)', '净资产收益率加权(%)', ' 支付给职工以及为职工支付的现金(万元)',
@@ -29,6 +31,7 @@ class Stock():
     report_end_year = 2016
 
     def __init__(self, code, name):
+        create_folder_if_need(self.caiwu_folder)
         self.code = code
         self.name = name
         # self.dframe=dframe
@@ -175,7 +178,7 @@ def generate_reports():  # 根据股票列表,生成报表
 
 if __name__ == '__main__':
     # s=Stock(sys.argv[1],sys.argv[2])  #股票代码，名字
-    s = Stock('600004', '白云机场')
+    s = Stock('000776', '广发证券')
     # # #s.doanload_stock_info()
     s.generate_report()
     # # s=Stock('000568','泸州老窖','白酒')
