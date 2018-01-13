@@ -99,11 +99,11 @@ def filter_stock_by_average_pe(min, max):
     data = pd.merge(gplb, current_price, left_index=True, right_index=True)
     # 因为这里的平均利润单位是万元，而总股本单位是亿，价格单位是元
     data['平均市盈率'] = data['总股本'] * data['价格'] * 10000 / data['平均利润']
-    print('%s:' % today)
+    print('\n%s:' % today)
     print()
     print('%d个公司' % data.shape[0])
     print('3年市盈率中位数%.1f' % round(data['平均市盈率'].median(), 1))
-    print('3年市净率中位数%.1f' % round(data['市净率'].median(), 1))
+    print('市净率中位数%.1f' % round(data['市净率'].median(), 1))
     data = data[data['平均市盈率'] < max]
     data = data[data['平均市盈率'] > min]
     data['平均市盈率'] = data['平均市盈率'].round(1)
@@ -118,4 +118,4 @@ def filter_stock_by_average_pe(min, max):
 
 
 if __name__ == '__main__':
-    filter_stock_by_average_pe(2, 20)  # 这个函数是根据平均pe过滤股票
+    filter_stock_by_average_pe(1, 20)  # 这个函数是根据平均pe过滤股票
