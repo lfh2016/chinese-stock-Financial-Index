@@ -2,12 +2,8 @@
 计算中国A股所有股票的3年平均财务指标,并可以按照3年平均市盈率过滤股票
 
 使用前提:
-1. 安装Python3
-2. 安装pandas
-3. lxml也是必须的，正常情况下安装了Anaconda后无须单独安装，如果没有可执行：pip install lxml
-4. tushare
-
-建议安装Anaconda（http://www.continuum.io/downloads），一次安装包括了Python环境和全部依赖包，减少问题出现的几率。
+1. 下载并安装python3版本的Anaconda（https://www.anaconda.com/download/）
+2. 在当前目录打开命令行，输入 pip install -r requirement。
 
 
 使用方法
