@@ -4,12 +4,11 @@ from datetime import datetime
 from time import sleep
 
 import pandas as pd
-
 import tushare as ts
 
 current_folder = os.path.dirname(os.path.abspath(__file__))
 
-calcu_average_profit_end_year = 2016  # 计算平均利润的截止年,包括该年
+calcu_average_profit_end_year = 2017  # 计算平均利润的截止年,包括该年
 caiwu_folder = os.path.join(current_folder, 'finance%s' % calcu_average_profit_end_year)
 DEBUG = True
 
@@ -114,7 +113,7 @@ def filter_stock_by_average_pe(min, max):
     data['总股本'] = data['总股本'].round()
     data['流通股本'] = data['流通股本'].round()
     average_pe_file = os.path.join(current_folder, today + '-3年平均市盈率在%s和%s之间的公司.xlsx' % (min, max))
-    data.to_excel(average_pe_file)
+    data.to_excel(average_pe_file, encoding='utf-8')
 
 
 if __name__ == '__main__':
