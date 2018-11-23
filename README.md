@@ -1,9 +1,10 @@
 # chinese-stock-Financial-Index
-计算中国A股所有股票的3年平均财务指标,并可以按照3年平均市盈率过滤股票
+计算中国A股所有股票的3年平均财务指标,并可以按照3年平均市盈率和最近5年ROE过滤股票
 
 使用前提:
-1. 下载并安装python3版本的Anaconda（https://www.anaconda.com/download/）
-2. 在当前目录打开命令行，输入 pip install -r requirement。
+1. 安装python3.6或者更高版本
+1. 在当前目录创建python虚拟环境，运行命令 pyvenv venv
+2. 安装依赖库，在当前目录打开命令行，输入 pip install -r requirement。
 
 
 使用方法
