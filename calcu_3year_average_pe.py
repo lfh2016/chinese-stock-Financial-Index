@@ -9,7 +9,7 @@ from dateutil.relativedelta import relativedelta
 
 current_folder = os.path.dirname(os.path.abspath(__file__))
 
-calcu_average_profit_end_year = 2017  # 计算平均利润的截止年,包括该年
+calcu_average_profit_end_year = 2018  # 计算平均利润的截止年,包括该年
 caiwu_folder = os.path.join(current_folder,
                             'finance%s' % calcu_average_profit_end_year)
 
@@ -71,7 +71,7 @@ def last_5_year_roe(code, year):
 
 
 def calcu_all_stocks_3year_roe_and_average_profit(year):  # 生成3年平均利润列表
-    path = os.path.join(current_folder, '股票列表%s.csv' % today)
+    path = os.path.join(current_folder, 'stock_list%s.csv' % today)
     if not os.path.exists(path):
         data = ts.get_stock_basics()
         lie = [
@@ -95,9 +95,8 @@ def calcu_all_stocks_3year_roe_and_average_profit(year):  # 生成3年平均利�
             print(e)
             data.loc[index, '平均利润'] = 0
 
-        data.loc[index, '当年roe'],data.loc[index, '上1年roe'],data.loc[index, '上2年roe'], \
-        data.loc[index, '上3年roe'],data.loc[index, '上4年roe']=\
-            last_5_year_roe('%06d' % index, year)
+        data.loc[index, '上4年roe'], data.loc[index, '上3年roe'], data.loc[index, '上2年roe'], \
+        data.loc[index, '上1年roe'], data.loc[index, '当年roe'] = last_5_year_roe('%06d' % index, year)
         print('完成%s' % index)
     data.to_csv(
         os.path.join(current_folder, '3年平均利润及其他财务指标%s.csv' % today),
@@ -148,7 +147,7 @@ def filter_stock_by_average_pe(min, max):
     data.to_excel(average_pe_file, encoding='utf-8')
 
 
-def filter_by_roe(min):  #筛选出最近5年ROE都高于min的公司
+def filter_by_roe(min):  # 筛选出最近5年ROE都高于min的公司
     path = os.path.join(current_folder, '3年平均利润及其他财务指标%s.csv' % today)
     if not os.path.exists(path):  # 没有就生成3年平均利润列表
         calcu_all_stocks_3year_roe_and_average_profit(
@@ -187,5 +186,5 @@ def filter_by_roe(min):  #筛选出最近5年ROE都高于min的公司
 
 
 if __name__ == '__main__':
-    filter_stock_by_average_pe(1, 12.5)  # 这个函数是根据平均pe过滤股票
-    filter_by_roe(15)  #筛选最近5年ROE都高于参数的公司
+    filter_stock_by_average_pe(1, 10)  # 这个函数是根据平均pe过滤股票
+    filter_by_roe(25)  # 筛选最近5年ROE都高于参数的公司
