@@ -1,5 +1,5 @@
 tushare==1.0.5
-lxml==4.2.5
+lxml==4.6.5
 pandas==0.24.2
 requests==2.20.1
 bs4==0.0.1
