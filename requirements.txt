@@ -1,7 +1,7 @@
 tushare==1.0.5
 lxml==4.2.5
 pandas==0.24.2
-requests==2.20.1
+requests==2.31.0
 bs4==0.0.1
 openpyxl==2.5.11
 python-dateutil==2.7.3
